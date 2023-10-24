@@ -1,0 +1,47 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#include <stdlib.h>
+#include <util/assert.h>
+
+static struct
+{
+    AssertHandlerFn *handler;
+    uint32_t panic;
+} ASSERT;
+
+extern AssertHandlerFn *assertSetHandler(AssertHandlerFn *handler)
+{
+    AssertHandlerFn *previous = ASSERT.handler;
+    ASSERT.handler = handler;
+    return previous;
+}
+
+extern AssertHandlerFn *assertGetHandler(void)
+{
+    return ASSERT.handler;
+}
+
+extern void _LIBSEVEN_NORETURN assertRaise(
+    const char *message,
+    const char *function,
+    const char *file,
+    uint32_t line)
+{
+#define REG_IME *(uint32_t volatile *)(0x04000208)
+    REG_IME = 0;
+
+    AssertHandlerFn *h = ASSERT.handler;
+
+    // Prevent a nested assert
+    if (h && !ASSERT.panic)
+    {
+        ASSERT.panic = 1;
+        h(message, function, file, line);
+    }
+
+    _Exit(EXIT_FAILURE);
+}
