@@ -20,11 +20,9 @@ add_library(util STATIC
     src/bit.s
     src/debug.s
     src/log.c
-    src/mem.s
     src/profile.s
     src/rand.s
     src/simd.s
-    src/str.s
 )
 
 target_include_directories(util PUBLIC include/)
